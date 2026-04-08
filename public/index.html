@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guest Feedback Severity Analyzer</title>
+    <style>
+      :root {
+        --bg: #f3efe6;
+        --card: rgba(255, 252, 247, 0.86);
+        --ink: #1e2430;
+        --muted: #5b6472;
+        --accent: #bf5a36;
+        --accent-dark: #8c3f26;
+        --line: rgba(30, 36, 48, 0.12);
+        --critical: #9b2226;
+        --high: #ca6702;
+        --medium: #bb8b00;
+        --low: #3a7d44;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(191, 90, 54, 0.18), transparent 32%),
+          radial-gradient(circle at bottom right, rgba(36, 89, 124, 0.16), transparent 28%),
+          linear-gradient(135deg, #efe8da 0%, #f7f4ec 48%, #e8efe8 100%);
+      }
+
+      .shell {
+        width: min(1080px, calc(100% - 32px));
+        margin: 32px auto;
+        display: grid;
+        gap: 20px;
+      }
+
+      .hero,
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--card);
+        backdrop-filter: blur(10px);
+        border-radius: 22px;
+        box-shadow: 0 18px 50px rgba(40, 38, 30, 0.08);
+      }
+
+      .hero {
+        padding: 28px;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin-bottom: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        color: var(--accent-dark);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(2rem, 4vw, 3.6rem);
+        line-height: 0.95;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .layout {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 260px;
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+        font: inherit;
+        color: var(--ink);
+        resize: vertical;
+      }
+
+      button {
+        margin-top: 14px;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        background: var(--accent);
+        color: white;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--accent-dark);
+      }
+
+      .status {
+        margin-top: 10px;
+        min-height: 24px;
+        color: var(--muted);
+      }
+
+      .result-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .result {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      .result-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        color: white;
+      }
+
+      .critical { background: var(--critical); }
+      .high { background: var(--high); }
+      .medium { background: var(--medium); }
+      .low { background: var(--low); }
+
+      .meta {
+        margin-top: 8px;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      @media (max-width: 860px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <span class="eyebrow">Operations Review</span>
+        <h1>Guest Feedback Severity Analyzer</h1>
+        <p>Paste JSON feedback below and run the same scoring pipeline used by the API and CLI.</p>
+      </section>
+
+      <section class="layout">
+        <section class="panel">
+          <label for="payload">Feedback JSON array</label>
+          <textarea id="payload">[
+  {
+    "id": "demo-1",
+    "timestamp": "2026-04-08T09:00:00Z",
+    "feedback_text": "There was water leaking near the elevator and the floor was slippery for over an hour."
+  },
+  {
+    "id": "demo-2",
+    "timestamp": "2026-04-08T10:15:00Z",
+    "feedback_text": "The front desk team was friendly and fixed my late check-in issue quickly."
+  }
+]</textarea>
+          <button id="submit">Analyze Feedback</button>
+          <div class="status" id="status"></div>
+        </section>
+
+        <section class="panel">
+          <div class="result-list" id="results"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const submitButton = document.getElementById("submit");
+      const payloadInput = document.getElementById("payload");
+      const statusNode = document.getElementById("status");
+      const resultsNode = document.getElementById("results");
+
+      submitButton.addEventListener("click", async () => {
+        statusNode.textContent = "Analyzing feedback...";
+        resultsNode.innerHTML = "";
+
+        try {
+          const feedback = JSON.parse(payloadInput.value);
+          const response = await fetch("/analyze", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ feedback })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Analysis request failed.");
+          }
+
+          statusNode.textContent = `Processed ${data.meta.count} feedback item(s).`;
+
+          for (const result of data.results) {
+            const card = document.createElement("article");
+            card.className = "result";
+            card.innerHTML = `
+              <div class="result-top">
+                <strong>${result.id}</strong>
+                <span class="badge ${result.priority_level}">${result.priority_level.toUpperCase()} · ${result.severity_score}</span>
+              </div>
+              <div class="meta">${result.category} · ${result.sentiment}</div>
+              <p>${result.feedback_text}</p>
+              <div class="meta">Action: ${result.recommended_action}</div>
+            `;
+            resultsNode.appendChild(card);
+          }
+        } catch (error) {
+          statusNode.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>

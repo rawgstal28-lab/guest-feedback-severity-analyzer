@@ -1,0 +1,29 @@
+{
+  "name": "guest-feedback-severity-analyzer",
+  "version": "1.0.0",
+  "description": "Lightweight Node.js app that scores guest feedback severity with OpenAI.",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "analyze:csv": "node src/cli.js --csv ./data/guest-feedback.csv --out ./output/analysis-from-csv.json",
+    "analyze:json": "node src/cli.js --json ./data/mock-feedback.json --out ./output/analysis-from-json.json"
+  },
+  "keywords": [
+    "openai",
+    "express",
+    "guest-feedback",
+    "severity-scoring"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "openai": "^4.104.0"
+  }
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "2001",
+    "timestamp": "2026-04-08T11:00:00Z",
+    "feedback_text": "Housekeeping never arrived and the room remained dirty all day."
+  },
+  {
+    "id": "2002",
+    "timestamp": "2026-04-08T11:10:00Z",
+    "feedback_text": "The concierge was amazing and helped us recover a lost bag quickly."
+  },
+  {
+    "id": "2003",
+    "timestamp": "2026-04-08T11:30:00Z",
+    "feedback_text": "A broken stair rail in the lobby felt dangerous and could cause an injury."
+  }
+]
